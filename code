@@ -1,0 +1,145 @@
+using System;
+using System.Text.RegularExpressions;
+
+
+
+namespace dzkurs
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            Seller seller = new Seller();
+            Player player = new Player();
+            bool isWorking = true;
+            ConsoleKeyInfo key;
+
+            seller.AddProduct("Пила", 15);
+            seller.AddProduct("Карандаш", 2);
+            seller.AddProduct("Отвёртка", 10);
+            seller.AddProduct("Моторная лодка", 200);
+            seller.AddProduct("Ручка", 3);
+            seller.AddProduct("Лобзик", 12);
+
+            Console.WriteLine("Добро пожаловать в магазин! Чего изволите?");
+
+            while (isWorking)
+            {
+                Console.WriteLine("Что у вас есть? - Q");
+                Console.WriteLine("Хочу сделать покупку - W");
+                Console.WriteLine("На вашем счету " + player.Money + " денег");
+                Console.WriteLine("Вот что у вас есть");
+                key = Console.ReadKey(true);
+
+                if (key.Key == ConsoleKey.Q)
+                {
+                    seller.ShowProducts();
+                }
+                else if (key.Key == ConsoleKey.W)
+                {
+                    player.BuyProduct(seller);
+                }
+                else if (key.Key == ConsoleKey.Escape)
+                {
+                    Console.WriteLine("До свидания!");
+                    isWorking = false;
+                }
+                else
+                {
+                    Console.WriteLine("Что-то я вас не понимаю");
+                }
+
+                Console.WriteLine("Что-нибудь ещё?");
+            }
+        }
+    }
+
+    class Player
+    {
+        public List<Product> Products { get; private set; } = new List<Product>();
+        public int Money { get; private set; } = 500;
+
+        public List<Product> BuyProduct(Seller seller)
+        {
+            string userInput;
+
+            string value = null;
+
+            Console.WriteLine("Что хотите купить?");
+
+            userInput = Console.ReadLine();
+
+            for (int i = 0; i < seller.Products.Count; i++)
+            {
+                if (userInput == seller.Products[i].Name && Money >= seller.Products[i].Price)
+                {
+                    Console.WriteLine("Вот вам " + seller.Products[i].Name);
+
+                    value = seller.Products[i].Name;
+
+                    Products.Add(seller.Products[i]);
+
+                    Money -= seller.Products[i].Price;
+
+                    seller.Products.RemoveAt(i);
+
+                    break;
+                }
+                else if (userInput == seller.Products[i].Name && Money < seller.Products[i].Price)
+                {
+                    Console.WriteLine("Сначала на это заработай!!");
+                }
+            }
+
+            if (value == null)
+            {
+                Console.WriteLine("Мне кажется я не нашёл то что вы искали...");
+            }
+
+            return Products;
+        }
+
+        public void ShowInventory()
+        {
+            for (int i = 0; i < Products.Count; i++)
+            {
+                Console.WriteLine(Products[i].Name);
+            }
+
+        }
+
+    }
+
+    class Seller
+    {
+        public List<Product> Products { get; private set; } = new List<Product>();
+
+        public List<Product> AddProduct(string name, int price)
+        {
+            Product product = new Product(name, price);
+            Products.Add(product);
+
+            return Products;
+        }
+
+        public void ShowProducts()
+        {
+            for (int i = 0; i < Products.Count; i++)
+            {
+                Console.WriteLine(Products[i].Name + " " + Products[i].Price);
+            }
+        }
+    }
+
+    class Product
+    {
+        public string Name { get; private set; }
+        public int Price { get; private set; }
+
+        public Product (string name, int price)
+        {
+            Name = name;
+            Price = price;
+        }
+    }
+}
