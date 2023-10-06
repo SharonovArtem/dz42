@@ -1,16 +1,14 @@
 using System;
 using System.Text.RegularExpressions;
 
-
-
 namespace dzkurs
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            Seller seller = new Seller();
-            Player player = new Player();
+            Seller seller = new Seller(0, null);
+            Player player = new Player(0, null);
             bool isWorking = true;
             ConsoleKeyInfo key;
 
@@ -54,9 +52,15 @@ namespace dzkurs
         }
     }
 
-    class Player
+    class Player : MarketParticipant
     {
-        public List<Product> Products { get; private set; } = new List<Product>();
+        public Player(int money, List<Product> products) : base(money, products)
+        {
+            products = _products;
+            money = _money;
+        }
+
+        private List<Product> _products = new List<Product>();
         public int Money { get; private set; } = 500;
 
         public List<Product> BuyProduct(Seller seller)
@@ -65,27 +69,32 @@ namespace dzkurs
 
             string value = null;
 
+            seller.makeProductsVisible(_products);
+
             Console.WriteLine("Что хотите купить?");
 
             userInput = Console.ReadLine();
 
-            for (int i = 0; i < seller.Products.Count; i++)
+            for (int i = 0; i < _products.Count; i++)
             {
-                if (userInput == seller.Products[i].Name && Money >= seller.Products[i].Price)
+                if (userInput == _products[i].Name && Money >= _products[i].Price)
                 {
-                    Console.WriteLine("Вот вам " + seller.Products[i].Name);
+                    Console.WriteLine("Вот вам " + _products[i].Name);
 
-                    value = seller.Products[i].Name;
+                    value = _products[i].Name;
 
-                    Products.Add(seller.Products[i]);
+                    _products.Add(_products[i]);
 
-                    Money -= seller.Products[i].Price;
+                    Money -= _products[i].Price;
+                    seller.GetMoney(_products[i].Price);
 
-                    seller.Products.RemoveAt(i);
+                    _products.RemoveAt(i);
+
+                    seller.ShowMoney();
 
                     break;
                 }
-                else if (userInput == seller.Products[i].Name && Money < seller.Products[i].Price)
+                else if (userInput == _products[i].Name && Money < _products[i].Price)
                 {
                     Console.WriteLine("Сначала на это заработай!!");
                 }
@@ -96,50 +105,84 @@ namespace dzkurs
                 Console.WriteLine("Мне кажется я не нашёл то что вы искали...");
             }
 
-            return Products;
+            return _products;
         }
-
-        public void ShowInventory()
-        {
-            for (int i = 0; i < Products.Count; i++)
-            {
-                Console.WriteLine(Products[i].Name);
-            }
-
-        }
-
     }
 
-    class Seller
+    class Seller : MarketParticipant
     {
-        public List<Product> Products { get; private set; } = new List<Product>();
+        private List<Product> _products = new List<Product>();
+        protected int _money = 0;
+        public Seller(int money, List<Product> products) : base (money, products)
+        {
+            products = _products;
+            money = _money;
+        }
+
+        public void GetMoney(int moneyFromSell)
+        {
+            _money += moneyFromSell;
+
+            Console.WriteLine("Деньги продавца - " + _money);
+        }
+
+        public void ShowMoney()
+        {
+            Console.Write(_money);
+        }
 
         public List<Product> AddProduct(string name, int price)
         {
             Product product = new Product(name, price);
-            Products.Add(product);
+            _products.Add(product);
 
-            return Products;
+            return _products;
         }
 
         public void ShowProducts()
         {
-            for (int i = 0; i < Products.Count; i++)
+            for (int i = 0; i < _products.Count; i++)
             {
-                Console.WriteLine(Products[i].Name + " " + Products[i].Price);
+                Console.WriteLine(_products[i].Name + " " + _products[i].Price);
             }
+        }
+
+        public void makeProductsVisible(List<Product> products)
+        {
+            products = _products;
         }
     }
 
     class Product
     {
-        public string Name { get; private set; }
-        public int Price { get; private set; }
-
-        public Product (string name, int price)
+        public Product(string name, int price)
         {
             Name = name;
             Price = price;
         }
+
+        public string Name { get; private set; }
+        public int Price { get; private set; }
+    }
+
+    class MarketParticipant
+    {
+        protected int _money;
+        protected List<Product> _products;
+
+        public MarketParticipant(int money, List<Product> products)
+        {
+            products = _products;
+            money = _money;
+        }
+    }
+
+    class Market
+    {
+        public void TryGetProduct()
+        {
+
+        }
+
     }
 }
