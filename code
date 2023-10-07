@@ -113,7 +113,7 @@ namespace dzkurs
     {
         private List<Product> _products = new List<Product>();
         protected int _money = 0;
-        public Seller(int money, List<Product> products) : base (money, products)
+        public Seller(int money, List<Product> products) : base(money, products)
         {
             products = _products;
             money = _money;
@@ -179,7 +179,7 @@ namespace dzkurs
 
     class Market
     {
-        public void TryGetProduct()
+        public bool TryGetProduct(Product product)
         {
 
         }
