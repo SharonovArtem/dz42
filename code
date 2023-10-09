@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace dzkurs
 {
@@ -7,127 +7,180 @@ namespace dzkurs
     {
         static void Main(string[] args)
         {
-            Deck deckOfCards = new Deck();
-            Player player = new Player();
-            Random random = new Random();
-            Table table = new Table();
-            bool isWoking = true;
-            deckOfCards.CreateCards();
+            Market market = new Market();
+            Seller seller = new Seller(0, null);
+            Player player = new Player(0, null);
+            bool isWorking = true;
+            ConsoleKeyInfo key;
 
-            while (isWoking)
+            seller.AddProduct("Пила", 15);
+            seller.AddProduct("Карандаш", 2);
+            seller.AddProduct("Отвёртка", 10);
+            seller.AddProduct("Моторная лодка", 200);
+            seller.AddProduct("Ручка", 3);
+            seller.AddProduct("Лобзик", 12);
+
+            Console.WriteLine("Добро пожаловать в магазин! Чего изволите?");
+
+            while (isWorking)
             {
-                Console.WriteLine("нажмите на пробел чтобы вытянуть карту");
-                ConsoleKeyInfo key = Console.ReadKey(true);
+                Console.WriteLine("Что у вас есть? - Q");
+                Console.WriteLine("Хочу сделать покупку - W");
+                Console.WriteLine("На вашем счету " + player.ShowMoney + " денег");
+                Console.WriteLine("Вот что у вас есть");
+                key = Console.ReadKey(true);
 
-                if (key.Key == ConsoleKey.Spacebar)
+                if (key.Key == ConsoleKey.Q)
                 {
-                    table.GetCard(player, deckOfCards);
+                    seller.ShowProducts();
+                }
+                else if (key.Key == ConsoleKey.W)
+                {
+                    market.GetProduct(player, seller);
                 }
                 else if (key.Key == ConsoleKey.Escape)
                 {
-                    isWoking = false;
+                    Console.WriteLine("До свидания!");
+                    isWorking = false;
                 }
                 else
                 {
-                    Console.WriteLine("Не выходит!");
+                    Console.WriteLine("Что-то я вас не понимаю");
                 }
+
+                Console.WriteLine("Что-нибудь ещё?");
             }
         }
     }
 
-    class Card
+    class Player : MarketParticipant
     {
-        public Card(string suit, string name)
+        public Player(int money, List<Product> products) : base(money, products)
+        { }
+
+        public void ShowMoney()
+        {
+            Console.Write(Money);
+        }
+
+        public void GetProductFromMarket(Product gottenProduct)
+        {
+            Products.Add(gottenProduct);
+        }
+    }
+
+    class Seller : MarketParticipant
+    {
+
+        public Seller(int money, List<Product> products) : base(money, products)
+        {
+
+        }
+
+        public void GetMoney(int moneyFromSell)
+        {
+            Money += moneyFromSell;
+
+            Console.WriteLine("Деньги продавца - " + Money);
+        }
+
+        public void ShowMoney()
+        {
+            Console.Write(Money);
+        }
+
+        public void ShowProductsToMarket(List<Product> products)
+        {
+            products = Products;
+        }
+
+        public List<Product> AddProduct(string name, int price)
+        {
+            Product product = new Product(name, price);
+            Products.Add(product);
+
+            return Products;
+        }
+
+        public void ShowProducts()
+        {
+            for (int i = 0; i < Products.Count; i++)
+            {
+                Console.WriteLine(Products[i].Name + " " + Products[i].Price);
+            }
+        }
+    }
+
+    class Product
+    {
+        public Product(string name, int price)
         {
             Name = name;
-            Suit = suit;
+            Price = price;
         }
 
-        public string Name { get; }
-        public string Suit { get; }
+        public string Name { get; private set; }
+        public int Price { get; private set; }
     }
 
-    class Deck
+    class MarketParticipant
     {
-        private List<Card> _сards = new List<Card>();
+        protected int Money;
+        protected List<Product> Products;
 
-        public void CreateCards()
+        public MarketParticipant(int money, List<Product> products)
         {
-            List<String> suits = new List<String>() { "♠", "♣", "♦", "♥" };
-            List<String> names = new List<String>() { "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace" };
+            products = Products;
+            money = Money;
+        }
+    }
 
-            for (int i = 0; i < suits.Count; i++)
+    class Market
+    {
+        private Product _soldProduct = new Product(null, 0);
+
+        public bool TryGetProduct(List<Product> products, Player player, Seller seller, Product product)
+        {
+            bool isGotten = false;
+
+            Console.WriteLine("Введите название продукта");
+
+            String userInput = Console.ReadLine();
+
+            for (int i = 0; i < products.Count; i++)
             {
-                for (int nameNumber = 0; nameNumber < names.Count; nameNumber++)
+                if (products[i].Name == userInput)
                 {
-                    _сards.Add(new Card(suits[i], names[nameNumber]));
+                    product = products[i];
+                    isGotten = true;
                 }
             }
+
+            return isGotten;
         }
 
-        public void ShuffleCards()
+        public void SellProduct(Player player, Seller seller)
         {
-            Random random = new Random();
+            List<Product> products = new List<Product>();
+            Product product = new Product(null, 0);
 
-            for (int i = _сards.Count - 1; i >= 1; i--)
+            seller.ShowProductsToMarket(products);
+
+            if (TryGetProduct(products, player, seller, product))
             {
-                int randomNumber = random.Next(_сards.Count);
-                var temp = _сards[randomNumber];
-                _сards[randomNumber] = _сards[i];
-                _сards[i] = temp;
-            }
-        }
-
-        public Card DropOne()
-        {
-            Card droppedCard = null;
-            if (_сards.Count > 0)
-            {
-                droppedCard = _сards[_сards.Count - 1];
-
-                _сards.RemoveAt(_сards.Count - 1);
+                _soldProduct = product;
             }
             else
             {
-                Console.WriteLine("Карты кончились!");
-            }
-
-            return droppedCard;
-        }
-    }
-
-    class Player
-    {
-        private List<Card> _pickedCards = new List<Card>();
-
-        public void TakeCard(Card card)
-        {
-            _pickedCards.Add(card);
-        }
-
-        public void ShowCards()
-        {
-            Console.WriteLine("Ваши карты:");
-
-            for (int i = 0; i < _pickedCards.Count; i++)
-            {
-                Console.Write(_pickedCards[i].Name + _pickedCards[i].Suit + ", ");
+                Console.WriteLine("Что-то я не вижу такого товара...");
             }
         }
-    }
 
-    class Table
-    {
-        public void GetCard(Player player, Deck deck)
+        public void GetProduct(Player player, Seller seller)
         {
-            Console.WriteLine("Вы Вытянули:");
+            SellProduct(player, seller);
 
-            Card card = deck.DropOne();
-            player.TakeCard(card);
-
-            Console.WriteLine(card.Name + card.Suit);
-
-            player.ShowCards();
+            player.GetProductFromMarket(_soldProduct);
         }
     }
 }
