@@ -9,7 +9,7 @@ namespace dzkurs
         {
             Market market = new Market();
             Seller seller = new Seller(0, null);
-            Player player = new Player(0, null);
+            Player player = new Player(500, null);
             bool isWorking = true;
             ConsoleKeyInfo key;
 
@@ -24,10 +24,12 @@ namespace dzkurs
 
             while (isWorking)
             {
-                Console.WriteLine("Что у вас есть? - Q");
-                Console.WriteLine("Хочу сделать покупку - W");
-                Console.WriteLine("На вашем счету " + player.ShowMoney + " денег");
-                Console.WriteLine("Вот что у вас есть");
+                Console.Write("Что у вас есть? - Q\n");
+                Console.Write("Хочу сделать покупку - W\n");
+                Console.Write("На вашем счету ");
+                player.ShowMoney();
+                Console.Write(" денег\n");
+
                 key = Console.ReadKey(true);
 
                 if (key.Key == ConsoleKey.Q)
@@ -63,9 +65,35 @@ namespace dzkurs
             Console.Write(Money);
         }
 
+        public bool TryGetMoney(out Product product)
+        {
+            product = null;
+            bool isEnough = false;
+
+            if (product.Price <= Money)
+            {
+                isEnough = true;
+            }
+            else
+            {
+                isEnough = false;
+                Console.WriteLine("Иди работай!");
+            }
+
+            return isEnough;
+        }
+
         public void GetProductFromMarket(Product gottenProduct)
         {
             Products.Add(gottenProduct);
+        }
+
+        public void ShowInventory()
+        {
+            for (int i = 0; i < Products.Count; i++)
+            {
+                Console.WriteLine(Products[i]);
+            }
         }
     }
 
@@ -89,9 +117,39 @@ namespace dzkurs
             Console.Write(Money);
         }
 
-        public void ShowProductsToMarket(List<Product> products)
+
+        public bool TryGetProduct(out Product product)
         {
-            products = Products;
+            product = new Product(null, 0);
+            bool isGotten = false;
+
+            Console.WriteLine("Введите название продукта");
+
+            String userInput = Console.ReadLine();
+
+            for (int i = 0; i < Products.Count; i++)
+            {
+                if (Products[i].Name == userInput)
+                {
+                    product = Products[i];
+
+                    isGotten = true;
+                    break;
+                }
+            }
+
+            return isGotten;
+        }
+
+        public Product GiveProduct()
+        {
+            Product givenProduct = null;
+            if(TryGetProduct(out Product product) == true)
+            {
+                givenProduct = product;
+            }
+
+            return givenProduct;
         }
 
         public List<Product> AddProduct(string name, int price)
@@ -126,7 +184,7 @@ namespace dzkurs
     class MarketParticipant
     {
         protected int Money;
-        protected List<Product> Products;
+        protected List<Product> Products = new List<Product>();
 
         public MarketParticipant(int money, List<Product> products)
         {
@@ -137,50 +195,17 @@ namespace dzkurs
 
     class Market
     {
-        private Product _soldProduct = new Product(null, 0);
-
-        public bool TryGetProduct(List<Product> products, Player player, Seller seller, Product product)
-        {
-            bool isGotten = false;
-
-            Console.WriteLine("Введите название продукта");
-
-            String userInput = Console.ReadLine();
-
-            for (int i = 0; i < products.Count; i++)
-            {
-                if (products[i].Name == userInput)
-                {
-                    product = products[i];
-                    isGotten = true;
-                }
-            }
-
-            return isGotten;
-        }
-
-        public void SellProduct(Player player, Seller seller)
-        {
-            List<Product> products = new List<Product>();
-            Product product = new Product(null, 0);
-
-            seller.ShowProductsToMarket(products);
-
-            if (TryGetProduct(products, player, seller, product))
-            {
-                _soldProduct = product;
-            }
-            else
-            {
-                Console.WriteLine("Что-то я не вижу такого товара...");
-            }
-        }
-
         public void GetProduct(Player player, Seller seller)
         {
-            SellProduct(player, seller);
+            Product product = seller.GiveProduct();
 
-            player.GetProductFromMarket(_soldProduct);
+            if (player.TryGetMoney(out product))
+            {
+                player.GetProductFromMarket(product);
+            }
+
+            Console.WriteLine("У вас есть: ");
+            player.ShowInventory();
         }
     }
 }
