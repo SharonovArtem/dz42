@@ -8,8 +8,8 @@ namespace dzkurs
         static void Main(string[] args)
         {
             Market market = new Market();
-            Seller seller = new Seller(0, null);
-            Player player = new Player(500, null);
+            Seller seller = new Seller(0);
+            Player player = new Player(500);
             bool isWorking = true;
             ConsoleKeyInfo key;
 
@@ -38,7 +38,7 @@ namespace dzkurs
                 }
                 else if (key.Key == ConsoleKey.W)
                 {
-                    market.GetProduct(player, seller);
+                    market.TransferProduct(player, seller);
                 }
                 else if (key.Key == ConsoleKey.Escape)
                 {
@@ -57,71 +57,37 @@ namespace dzkurs
 
     class Player : MarketParticipant
     {
-        public Player(int money, List<Product> products) : base(money, products)
+        public Player(int money) : base(money)
         { }
 
-        public void ShowMoney()
+        private List<Product> _products = new List<Product>();
+
+        public void BuyProduct(Product product)
         {
-            Console.Write(Money);
+            Money -= product.Price;
+            Products.Add(product);
         }
 
-        public bool TryGetMoney(out Product product)
+        public bool CanPay(int price)
         {
-            product = null;
-            bool isEnough = false;
-
-            if (product.Price <= Money)
-            {
-                isEnough = true;
-            }
-            else
-            {
-                isEnough = false;
-                Console.WriteLine("Иди работай!");
-            }
-
-            return isEnough;
-        }
-
-        public void GetProductFromMarket(Product gottenProduct)
-        {
-            Products.Add(gottenProduct);
-        }
-
-        public void ShowInventory()
-        {
-            for (int i = 0; i < Products.Count; i++)
-            {
-                Console.WriteLine(Products[i]);
-            }
+            return price <= Money;
         }
     }
 
     class Seller : MarketParticipant
     {
-
-        public Seller(int money, List<Product> products) : base(money, products)
-        {
-
+        public Seller(int money) : base(money)
+        { 
         }
 
         public void GetMoney(int moneyFromSell)
         {
             Money += moneyFromSell;
-
-            Console.WriteLine("Деньги продавца - " + Money);
         }
-
-        public void ShowMoney()
-        {
-            Console.Write(Money);
-        }
-
 
         public bool TryGetProduct(out Product product)
         {
-            product = new Product(null, 0);
-            bool isGotten = false;
+            product = null;
 
             Console.WriteLine("Введите название продукта");
 
@@ -129,43 +95,27 @@ namespace dzkurs
 
             for (int i = 0; i < Products.Count; i++)
             {
-                if (Products[i].Name == userInput)
+                if (Products[i].Name.ToUpper() == userInput.ToUpper())
                 {
                     product = Products[i];
 
-                    isGotten = true;
-                    break;
+                    return true;
                 }
             }
 
-            return isGotten;
+            return false;
         }
 
-        public Product GiveProduct()
+        public void Sell(Product product)
         {
-            Product givenProduct = null;
-            if(TryGetProduct(out Product product) == true)
-            {
-                givenProduct = product;
-            }
-
-            return givenProduct;
+            GetMoney(product.Price);
+            Products.Remove(product);
         }
 
-        public List<Product> AddProduct(string name, int price)
+        public void AddProduct(string name, int price)
         {
             Product product = new Product(name, price);
             Products.Add(product);
-
-            return Products;
-        }
-
-        public void ShowProducts()
-        {
-            for (int i = 0; i < Products.Count; i++)
-            {
-                Console.WriteLine(Products[i].Name + " " + Products[i].Price);
-            }
         }
     }
 
@@ -186,26 +136,50 @@ namespace dzkurs
         protected int Money;
         protected List<Product> Products = new List<Product>();
 
-        public MarketParticipant(int money, List<Product> products)
+        public MarketParticipant(int money)
         {
-            products = Products;
-            money = Money;
+            Money = money;
+        }
+
+        public void ShowMoney()
+        {
+            Console.Write(Money);
+        }
+
+        public void ShowProducts()
+        {
+            for (int i = 0; i < Products.Count; i++)
+            {
+                Console.WriteLine(Products[i].Name + " " + Products[i].Price);
+            }
         }
     }
 
     class Market
     {
-        public void GetProduct(Player player, Seller seller)
+        public void TransferProduct(Player player, Seller seller)
         {
-            Product product = seller.GiveProduct();
-
-            if (player.TryGetMoney(out product))
+            if(seller.TryGetProduct(out Product product) == false)
             {
-                player.GetProductFromMarket(product);
+                Console.WriteLine("Такого продукта нет");
+
+                return;
             }
 
-            Console.WriteLine("У вас есть: ");
-            player.ShowInventory();
+            if (player.CanPay(product.Price) == false)
+            {
+                return;
+            }
+
+            seller.Sell(product);
+            player.BuyProduct(product);
+
+            Console.WriteLine("Вы купили " + product.Name);
+
+            Console.Write("Деньги продавца ");
+            seller.ShowMoney();
+            Console.WriteLine("\nСписок ваших продуктов: ");
+            player.ShowProducts();
         }
     }
 }
